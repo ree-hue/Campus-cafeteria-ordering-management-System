@@ -14,10 +14,9 @@ if(isset($_POST['add_item'])){
     $price = $_POST['price'];
     $desc = $_POST['description'];
 
-    $stmt = $conn->prepare("INSERT INTO menu_items (item_name, price, description) VALUES (?, ?, ?)");
-    $stmt->bind_param("sds", $name, $price, $desc);
-    $stmt->execute();
-    $stmt->close();
+    // Use PostgreSQL prepared statement
+    $query = "INSERT INTO menu_items (item_name, price, description) VALUES ($1, $2, $3)";
+    pg_query_params($conn, $query, array($name, $price, $desc));
 }
 
 if(isset($_POST['update_item'])){
@@ -26,23 +25,21 @@ if(isset($_POST['update_item'])){
     $price = $_POST['price'];
     $desc = $_POST['description'];
 
-    $stmt = $conn->prepare("UPDATE menu_items SET item_name=?, price=?, description=? WHERE item_id=?");
-    $stmt->bind_param("sdsi", $name, $price, $desc, $id);
-    $stmt->execute();
-    $stmt->close();
+    // Use PostgreSQL prepared statement
+    $query = "UPDATE menu_items SET item_name=$1, price=$2, description=$3 WHERE item_id=$4";
+    pg_query_params($conn, $query, array($name, $price, $desc, $id));
 }
 
 
 if(isset($_POST['delete_item'])){
     $id = $_POST['item_id'];
-    $stmt = $conn->prepare("DELETE FROM menu_items WHERE item_id=?");
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $stmt->close();
-    
+    // Use PostgreSQL prepared statement
+    $query = "DELETE FROM menu_items WHERE item_id=$1";
+    pg_query_params($conn, $query, array($id));
 }
 
-$result = $conn->query("SELECT * FROM menu_items ORDER BY item_id DESC");
+// Use PostgreSQL query
+$result = pg_query($conn, "SELECT * FROM menu_items ORDER BY item_id DESC");
 ?>
 
 <!DOCTYPE html>
@@ -105,7 +102,7 @@ $result = $conn->query("SELECT * FROM menu_items ORDER BY item_id DESC");
             <th>Description</th>
             <th>Actions</th>
         </tr>
-        <?php while($row = $result->fetch_assoc()): ?>
+        <?php while($row = pg_fetch_assoc($result)): ?>
         <tr>
             <form method="POST">
                 <td><?php echo $row['item_id']; ?>

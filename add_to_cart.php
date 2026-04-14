@@ -8,16 +8,15 @@ if($data){
     $item_id = (int)$data['item_id'];
     $quantity = max(1, (int)$data['quantity']);
 
-    
-    $stmt = $conn->prepare("SELECT * FROM menu_items WHERE item_id=? AND availability_status=1");
-    $stmt->bind_param("i", $item_id);
-    $stmt->execute();
-    $item = $stmt->get_result()->fetch_assoc();
+    // Use PostgreSQL prepared statement
+    $query = "SELECT * FROM menu_items WHERE item_id = $1 AND availability_status = 1";
+    $result = pg_query_params($conn, $query, array($item_id));
+    $item = pg_fetch_assoc($result);
 
     if($item){
         if(!isset($_SESSION['cart'])) $_SESSION['cart'] = [];
 
-        
+        // Add or update cart item
         if(isset($_SESSION['cart'][$item_id])){
             $_SESSION['cart'][$item_id]['quantity'] += $quantity;
         } else {

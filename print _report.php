@@ -28,37 +28,34 @@ if ($from_date > $to_date) {
     list($from_date, $to_date) = [$to_date, $from_date];
 }
 
-
-$stmt = $conn->prepare("
+// PostgreSQL prepared statement for summary
+$query_summary = "
     SELECT 
         COUNT(*) as total_orders,
         COALESCE(SUM(total_amount),0) as total_revenue,
         COALESCE(AVG(total_amount),0) as avg_order_value,
         COUNT(CASE WHEN order_status = 'Completed' THEN 1 END) as completed_orders
     FROM orders
-    WHERE DATE(order_date) BETWEEN ? AND ?
-");
+    WHERE DATE(order_date) BETWEEN $1 AND $2
+";
 
-if (!$stmt) die("Summary query error: " . $conn->error);
+$summary_result = pg_query_params($conn, $query_summary, array($from_date, $to_date));
 
-$stmt->bind_param("ss", $from_date, $to_date);
-$stmt->execute();
-$summary = $stmt->get_result()->fetch_assoc();
-$stmt->close();
+if (!$summary_result) die("Summary query error: " . pg_last_error($conn));
 
+$summary = pg_fetch_assoc($summary_result);
 
-$stmt2 = $conn->prepare("
+// PostgreSQL prepared statement for details
+$query_details = "
     SELECT order_id, user_id, order_date, total_amount, order_status
     FROM orders
-    WHERE DATE(order_date) BETWEEN ? AND ?
+    WHERE DATE(order_date) BETWEEN $1 AND $2
     ORDER BY order_date DESC
-");
+";
 
-if (!$stmt2) die("Details query error: " . $conn->error);
+$result = pg_query_params($conn, $query_details, array($from_date, $to_date));
 
-$stmt2->bind_param("ss", $from_date, $to_date);
-$stmt2->execute();
-$result = $stmt2->get_result();
+if (!$result) die("Details query error: " . pg_last_error($conn));
 ?>
 
 <!DOCTYPE html>
@@ -93,7 +90,7 @@ th { background:#f0f0f0; }
 
 <h2>Order Details</h2>
 
-<?php if ($result->num_rows > 0): ?>
+<?php if (pg_num_rows($result) > 0): ?>
 <table>
 <tr>
     <th>ID</th>
@@ -103,7 +100,7 @@ th { background:#f0f0f0; }
     <th>Status</th>
 </tr>
 
-<?php while($row = $result->fetch_assoc()): ?>
+<?php while($row = pg_fetch_assoc($result)): ?>
 <tr>
     <td>#<?= $row['order_id'] ?></td>
     <td><?= $row['user_id'] ?></td>

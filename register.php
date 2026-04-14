@@ -2,23 +2,24 @@
 include 'includes/db.php';
 
 if(isset($_POST['register'])){
-    $name = mysqli_real_escape_string($conn,$_POST['name']);
-    $email = mysqli_real_escape_string($conn,$_POST['email']);
-    $phone = mysqli_real_escape_string($conn,$_POST['phone']);
+    $name = $_POST['name'];
+    $email = $_POST['email'];
+    $phone = $_POST['phone'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    $role = mysqli_real_escape_string($conn,$_POST['role']);
+    $role = $_POST['role'];
 
     if(!in_array($role, ['Student','Admin'])){
         $error = "Invalid role selected.";
     } else {
+        // Use prepared statements to prevent SQL injection
+        $query = "INSERT INTO users (name, email, password_hash, role, phone_number)
+                  VALUES ($1, $2, $3, $4, $5)";
+        $result = pg_query_params($conn, $query, array($name, $email, $password, $role, $phone));
 
-        $query = "INSERT INTO users (name,email,password_hash,role,phone_number)
-                  VALUES ('$name','$email','$password','$role','$phone')";
-
-        if(mysqli_query($conn,$query)){
+        if($result){
             $success = "Registration successful. <a href='login.php'>Login here</a>";
         } else {
-            $error = "Error: ".mysqli_error($conn);
+            $error = "Error: " . pg_last_error($conn);
         }
     }
 }

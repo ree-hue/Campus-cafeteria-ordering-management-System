@@ -1,9 +1,9 @@
 FROM php:8.2-apache
 
-# Install and enable MySQL extensions
+# Install and enable PostgreSQL extensions
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libzip-dev \
-    && docker-php-ext-install mysqli pdo_mysql \
+    && apt-get install -y --no-install-recommends libpq-dev libzip-dev \
+    && docker-php-ext-install pgsql pdo_pgsql \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a safe writable session folder

@@ -7,8 +7,8 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Student'){
 
 include 'includes/db.php';
 
-
-$result = $conn->query("SELECT * FROM menu_items WHERE availability_status = 1 ORDER BY category");
+// PostgreSQL query
+$result = pg_query($conn, "SELECT * FROM menu_items WHERE availability_status = 1 ORDER BY category");
 ?>
 
 <!DOCTYPE html>
@@ -188,8 +188,8 @@ $result = $conn->query("SELECT * FROM menu_items WHERE availability_status = 1 O
     <a class="back-btn" href="student_dashboard.php">← Back to Dashboard</a>
 
     <div class="menu-container">
-        <?php if($result->num_rows > 0): ?>
-            <?php while($item = $result->fetch_assoc()): ?>
+        <?php if(pg_num_rows($result) > 0): ?>
+            <?php while($item = pg_fetch_assoc($result)): ?>
                 <div class="menu-card">
                     <img src="image/<?php echo htmlspecialchars($item['image_url']); ?>" alt="<?php echo htmlspecialchars($item['item_name']); ?>">
                     <h3><?php echo htmlspecialchars($item['item_name']); ?></h3>

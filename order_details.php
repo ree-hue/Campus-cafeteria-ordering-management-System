@@ -4,12 +4,14 @@ include 'includes/db.php';
 
 $order_id = $_GET['order_id'];
 
-$result = $conn->query("
+// Use PostgreSQL prepared statement to prevent SQL injection
+$query = "
     SELECT oi.*, m.item_name 
     FROM order_items oi
     JOIN menu_items m ON oi.item_id = m.item_id
-    WHERE oi.order_id = $order_id
-");
+    WHERE oi.order_id = $1
+";
+$result = pg_query_params($conn, $query, array((int)$order_id));
 ?>
 
 <!DOCTYPE html>
@@ -36,7 +38,7 @@ th { background:#f1f1f1; }
     <th>Subtotal (Ksh)</th>
 </tr>
 
-<?php while($row = $result->fetch_assoc()): ?>
+<?php while($row = pg_fetch_assoc($result)): ?>
 <tr>
     <td><?php echo $row['item_name']; ?></td>
     <td><?php echo $row['quantity']; ?></td>

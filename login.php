@@ -3,14 +3,15 @@ session_start();
 include 'includes/db.php';
 
 if(isset($_POST['login'])){
-    $email = mysqli_real_escape_string($conn,$_POST['email']);
+    $email = $_POST['email'];
     $password = $_POST['password'];
 
-    $query = "SELECT * FROM users WHERE email='$email'";
-    $result = mysqli_query($conn,$query);
+    // Prepare statement to prevent SQL injection
+    $query = "SELECT * FROM users WHERE email = $1";
+    $result = pg_query_params($conn, $query, array($email));
 
-    if(mysqli_num_rows($result) > 0){
-        $user = mysqli_fetch_assoc($result);
+    if(pg_num_rows($result) > 0){
+        $user = pg_fetch_assoc($result);
 
         if(password_verify($password, $user['password_hash'])){
 

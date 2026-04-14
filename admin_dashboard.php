@@ -15,12 +15,20 @@ if(!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin'){
 }
 
 
-$orders = $conn->query("SELECT * FROM orders ORDER BY order_date DESC");
+$orders = pg_query($conn, "SELECT * FROM orders ORDER BY order_date DESC");
 
+// Fetch aggregates - PostgreSQL style
+$totalResult = pg_query($conn, "SELECT SUM(total_amount) AS total FROM orders");
+$totalRow = pg_fetch_assoc($totalResult);
+$totalSales = $totalRow['total'] ?? 0;
 
-$totalSales = $conn->query("SELECT SUM(total_amount) AS total FROM orders")->fetch_assoc()['total'] ?? 0;
-$totalOrders = $conn->query("SELECT COUNT(*) AS count FROM orders")->fetch_assoc()['count'] ?? 0;
-$completedOrders = $conn->query("SELECT COUNT(*) AS count FROM orders WHERE Status='Completed'")->fetch_assoc()['count'] ?? 0;
+$countResult = pg_query($conn, "SELECT COUNT(*) AS count FROM orders");
+$countRow = pg_fetch_assoc($countResult);
+$totalOrders = $countRow['count'] ?? 0;
+
+$completeResult = pg_query($conn, "SELECT COUNT(*) AS count FROM orders WHERE status='Completed'");
+$completeRow = pg_fetch_assoc($completeResult);
+$completedOrders = $completeRow['count'] ?? 0;
 
 
 if($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -28,10 +36,9 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = $_POST['item_name'];
         $price = $_POST['price'];
         $desc = $_POST['description'];
-        $stmt = $conn->prepare("INSERT INTO menu_items (item_name, price, description) VALUES (?, ?, ?)");
-        $stmt->bind_param("sds", $name, $price, $desc);
-        $stmt->execute();
-        $stmt->close();
+        // Use PostgreSQL prepared statement
+        $query = "INSERT INTO menu_items (item_name, price, description) VALUES ($1, $2, $3)";
+        pg_query_params($conn, $query, array($name, $price, $desc));
     }
 
     if(isset($_POST['update_item'])){
@@ -39,21 +46,19 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = $_POST['item_name'];
         $price = $_POST['price'];
         $desc = $_POST['description'];
-        $stmt = $conn->prepare("UPDATE menu_items SET item_name=?, price=?, description=? WHERE item_id=?");
-        $stmt->bind_param("sdsi", $name, $price, $desc, $id);
-        $stmt->execute();
-        $stmt->close();
+        // Use PostgreSQL prepared statement
+        $query = "UPDATE menu_items SET item_name=$1, price=$2, description=$3 WHERE item_id=$4";
+        pg_query_params($conn, $query, array($name, $price, $desc, $id));
     }
 
     if(isset($_POST['delete_item'])){
         $id = $_POST['item_id'];
-        $stmt = $conn->prepare("DELETE FROM menu_items WHERE item_id=?");
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $stmt->close();
+        // Use PostgreSQL prepared statement
+        $query = "DELETE FROM menu_items WHERE item_id=$1";
+        pg_query_params($conn, $query, array($id));
     }
 
-    
+    // Redirect safely
     header("Location: ".$_SERVER['PHP_SELF']);
     exit();
 }
@@ -290,8 +295,10 @@ function showSection(sectionId){
 
 <div class="alerts">
 <?php
-$pending = $conn->query("SELECT COUNT(*) as c FROM orders WHERE Status='Pending'")
-                ->fetch_assoc()['c'];
+// Use PostgreSQL query
+$pendingResult = pg_query($conn, "SELECT COUNT(*) as c FROM orders WHERE status='Pending'");
+$pendingRow = pg_fetch_assoc($pendingResult);
+$pending = $pendingRow['c'] ?? 0;
 
 if($pending > 0){
     echo "<div class='alert-box'>
@@ -314,9 +321,9 @@ if($pending > 0){
     <div class="card">
         <h3>Recent Orders</h3>
         <?php
-        $recent = $conn->query("SELECT * FROM orders ORDER BY order_date DESC LIMIT 5");
-        if($recent && $recent->num_rows > 0){
-            while($r = $recent->fetch_assoc()){
+        $recent = pg_query($conn, "SELECT * FROM orders ORDER BY order_date DESC LIMIT 5");
+        if($recent && pg_num_rows($recent) > 0){
+            while($r = pg_fetch_assoc($recent)){
                 echo "<p>Order #{$r['order_id']} - Ksh ".number_format($r['total_amount'],2)." ({$r['order_status']})</p>";
             }
         } else {
@@ -338,8 +345,11 @@ if($pending > 0){
         <h3>Today's Activity</h3>
         <?php
         $today = date('Y-m-d');
-        $todayOrders = $conn->query("SELECT COUNT(*) as c FROM orders WHERE DATE(order_date)='$today'")
-                            ->fetch_assoc()['c'];
+        // Use PostgreSQL prepared statement to prevent SQL injection
+        $query = "SELECT COUNT(*) as c FROM orders WHERE DATE(order_date) = $1";
+        $todayResult = pg_query_params($conn, $query, array($today));
+        $todayRow = pg_fetch_assoc($todayResult);
+        $todayOrders = $todayRow['c'] ?? 0;
 
         echo "<p>📦 Orders today: $todayOrders</p>";
         ?>
@@ -359,7 +369,7 @@ if($pending > 0){
 
 <div id="orders" class="section"> 
     <h2>Orders</h2>
-    <?php if($orders && $orders->num_rows > 0): ?>
+    <?php if($orders && pg_num_rows($orders) > 0): ?>
         <?php while($row = $orders->fetch_assoc()): ?>
             <div class="card">
                 <p><strong>Order ID:</strong> <?= $row['order_id']; ?></p>
@@ -408,8 +418,9 @@ if($pending > 0){
                 <th>Actions</th>
             </tr>
             <?php
-            $menuResult = $conn->query("SELECT * FROM menu_items ORDER BY item_id DESC");
-            while($menu = $menuResult->fetch_assoc()):
+            // Use PostgreSQL query
+            $menuResult = pg_query($conn, "SELECT * FROM menu_items ORDER BY item_id DESC");
+            while($menu = pg_fetch_assoc($menuResult)):
             ?>
             <tr>
                 <form method="POST">
@@ -459,11 +470,13 @@ if(isset($_GET['generate_report'])){
     $from = $_GET['from_date'];
     $to   = $_GET['to_date'];
 
-    $reportResult = $conn->query("SELECT * FROM orders WHERE DATE(order_date) BETWEEN '$from' AND '$to'");
+    // Use PostgreSQL prepared statement to prevent SQL injection
+    $query = "SELECT * FROM orders WHERE DATE(order_date) BETWEEN $1 AND $2";
+    $reportResult = pg_query_params($conn, $query, array($from, $to));
 
     if($reportResult){
-        $totalOrders = $reportResult->num_rows;
-        while($row = $reportResult->fetch_assoc()){
+        $totalOrders = pg_num_rows($reportResult);
+        while($row = pg_fetch_assoc($reportResult)){
             $totalSales += $row['total_amount'];
             if($row['order_status'] === 'Completed'){
                 $completedOrders++;

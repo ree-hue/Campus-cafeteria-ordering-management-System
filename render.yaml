@@ -6,14 +6,33 @@ services:
     region: oregon
     dockerfilePath: Dockerfile
     autoDeploy: true
+    buildCommand: "docker build -t campus-cafeteria ."
     envVars:
       - key: PORT
         value: "10000"
       - key: DB_HOST
-        value: ""
+        fromDatabase:
+          name: campus-cafeteria-db
+          property: host
+      - key: DB_PORT
+        value: "5432"
       - key: DB_NAME
-        value: ""
+        fromDatabase:
+          name: campus-cafeteria-db
+          property: database
       - key: DB_USER
-        value: ""
+        fromDatabase:
+          name: campus-cafeteria-db
+          property: user
       - key: DB_PASSWORD
-        value: ""
+        fromDatabase:
+          name: campus-cafeteria-db
+          property: password
+
+  - type: pgsql
+    name: campus-cafeteria-db
+    plan: free
+    region: oregon
+    databaseName: campus_cafeteria_ordering_management
+    user: campus_cafeteria_user
+    preDeployCommand: "psql -d $DATABASE_URL -f database.sql"

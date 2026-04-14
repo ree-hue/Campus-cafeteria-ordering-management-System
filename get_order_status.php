@@ -9,12 +9,11 @@ if(!isset($_GET['order_id']) || !isset($_SESSION['user_id'])) {
 
 $order_id = intval($_GET['order_id']);
 
+// Use PostgreSQL prepared statement
+$query = "SELECT order_status FROM orders WHERE order_id = $1 AND user_id = $2";
+$result = pg_query_params($conn, $query, array($order_id, $_SESSION['user_id']));
 
-$stmt = $conn->prepare("SELECT order_status FROM orders WHERE order_id = ? AND user_id = ?");
-$stmt->bind_param("ii", $order_id, $_SESSION['user_id']);
-$stmt->execute();
-$result = $stmt->get_result();
-if($row = $result->fetch_assoc()) {
+if($row = pg_fetch_assoc($result)) {
     echo json_encode(['order_status' => $row['order_status']]);
 } else {
     echo json_encode(['order_status' => 'unknown']);

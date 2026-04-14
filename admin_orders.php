@@ -15,10 +15,11 @@ $sql = "SELECT o.*,
         LEFT JOIN customers c ON o.customer_id = c.customer_id 
         ORDER BY o.created_at DESC";
 
-$orders = $conn->query($sql);
+// Use PostgreSQL query
+$orders = pg_query($conn, $sql);
 
 if (!$orders) {
-    die("Error fetching orders: " . $conn->error);
+    die("Error fetching orders: " . pg_last_error($conn));
 }
 ?>
 
@@ -101,7 +102,7 @@ if (!$orders) {
             </tr>
         </thead>
         <tbody>
-            <?php while($order = $orders->fetch_assoc()): ?>
+            <?php while($order = pg_fetch_assoc($orders)): ?>
             <tr>
                 <td><strong>#<?= str_pad($order['order_id'], 6, '0', STR_PAD_LEFT) ?></strong></td>
                 <td><?= htmlspecialchars($order['customer_name'] ?? 'Guest') ?></td>
@@ -117,11 +118,13 @@ if (!$orders) {
                 </td>
                 <td style="text-align: left;">
                     <?php
-                    $items_res = $conn->query("SELECT product_name, quantity, price 
-                                               FROM order_items 
-                                               WHERE order_id = " . (int)$order['order_id']);
+                    // Use PostgreSQL prepared statement
+                    $query = "SELECT product_name, quantity, price 
+                              FROM order_items 
+                              WHERE order_id = $1";
+                    $items_res = pg_query_params($conn, $query, array((int)$order['order_id']));
 
-                    while($item = $items_res->fetch_assoc()) {
+                    while($item = pg_fetch_assoc($items_res)) {
                         echo htmlspecialchars($item['product_name']) . 
                              " × " . $item['quantity'] . 
                              " (@ KSh " . number_format($item['price'], 2) . ")<br>";
@@ -134,7 +137,7 @@ if (!$orders) {
         </tbody>
     </table>
 
-    <?php if ($orders->num_rows === 0): ?>
+    <?php if (pg_num_rows($orders) === 0): ?>
         <p>No orders found.</p>
     <?php endif; ?>
 </body>

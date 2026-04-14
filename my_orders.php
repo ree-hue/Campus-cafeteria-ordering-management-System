@@ -10,11 +10,9 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Student') {
 
 $user_id = $_SESSION['user_id'];
 
-
-$stmt = $conn->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY order_date DESC");
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
+// Use PostgreSQL prepared statement
+$query = "SELECT * FROM orders WHERE user_id = $1 ORDER BY order_date DESC";
+$result = pg_query_params($conn, $query, array($user_id));
 ?>
 
 <!DOCTYPE html>
@@ -186,7 +184,7 @@ h2 {
         <h2>My Orders</h2>
     </div>
 
-    <?php if ($result->num_rows > 0): ?>
+    <?php if (pg_num_rows($result) > 0): ?>
         <?php while ($row = $result->fetch_assoc()): 
             $status = strtolower($row['Status']);
             
@@ -217,7 +215,7 @@ h2 {
 
                 <div class="item-list">
                     <strong>Items Ordered:</strong><br>
-                    <?php while ($item = $items_result->fetch_assoc()): ?>
+                    <?php while ($item = pg_fetch_assoc($items_result)): ?>
                         <p>
                             <?= htmlspecialchars($item['item_name']) ?> 
                             × <?= $item['quantity'] ?> 
@@ -240,11 +238,10 @@ h2 {
 <script>
 function refreshStatuses() {
     <?php
-    $stmt2 = $conn->prepare("SELECT order_id FROM orders WHERE user_id = ? ORDER BY order_date DESC");
-    $stmt2->bind_param("i", $user_id);
-    $stmt2->execute();
-    $result2 = $stmt2->get_result();
-    while ($row2 = $result2->fetch_assoc()):
+    // Use PostgreSQL prepared statement
+    $query2 = "SELECT order_id FROM orders WHERE user_id = $1 ORDER BY order_date DESC";
+    $result2 = pg_query_params($conn, $query2, array($user_id));
+    while ($row2 = pg_fetch_assoc($result2)):
     ?>
     fetch('get_order_status.php?order_id=<?= $row2['order_id'] ?>')
         .then(res => res.json())

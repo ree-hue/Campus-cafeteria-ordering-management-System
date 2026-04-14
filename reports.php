@@ -19,40 +19,38 @@ if ($from_date > $to_date) {
 }
 
 
-$stmt = $conn->prepare("
+// Use PostgreSQL prepared statement
+$query1 = "
     SELECT 
         COUNT(*) as total_orders,
         COALESCE(SUM(total_amount),0) as total_revenue,
         COALESCE(AVG(total_amount),0) as avg_order_value,
-        COUNT(CASE WHEN Status = 'Completed' THEN 1 END) as completed_orders
+        COUNT(CASE WHEN status = 'Completed' THEN 1 END) as completed_orders
     FROM orders 
-    WHERE DATE(order_date) BETWEEN ? AND ?
-");
+    WHERE DATE(order_date) BETWEEN $1 AND $2
+";
 
-if (!$stmt) {
-    die("Query error: " . $conn->error);
+$summary_result = pg_query_params($conn, $query1, array($from_date, $to_date));
+
+if (!$summary_result) {
+    die("Query error: " . pg_last_error($conn));
 }
 
-$stmt->bind_param("ss", $from_date, $to_date);
-$stmt->execute();
-$summary = $stmt->get_result()->fetch_assoc();
-$stmt->close();
+$summary = pg_fetch_assoc($summary_result);
 
-
-$stmt2 = $conn->prepare("
-    SELECT order_id, user_id, order_date, total_amount, Status
+// PostgreSQL prepared statement for orders list
+$query2 = "
+    SELECT order_id, user_id, order_date, total_amount, status
     FROM orders 
-    WHERE DATE(order_date) BETWEEN ? AND ?
+    WHERE DATE(order_date) BETWEEN $1 AND $2
     ORDER BY order_date DESC
-");
+";
 
-if (!$stmt2) {
-    die("Query error: " . $conn->error);
+$result = pg_query_params($conn, $query2, array($from_date, $to_date));
+
+if (!$result) {
+    die("Query error: " . pg_last_error($conn));
 }
-
-$stmt2->bind_param("ss", $from_date, $to_date);
-$stmt2->execute();
-$result = $stmt2->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -123,7 +121,7 @@ th {
 
 <h2>Order Details</h2>
 
-<?php if ($result->num_rows > 0): ?>
+<?php if (pg_num_rows($result) > 0): ?>
 
 <table>
 <tr>
@@ -134,13 +132,13 @@ th {
     <th>Status</th>
 </tr>
 
-<?php while ($row = $result->fetch_assoc()): ?>
+<?php while ($row = pg_fetch_assoc($result)): ?>
 <tr>
     <td>#<?= $row['order_id'] ?></td>
     <td><?= $row['user_id'] ?></td>
     <td><?= date('d M Y h:i A', strtotime($row['order_date'])) ?></td>
     <td><?= number_format($row['total_amount'], 2) ?></td>
-    <td><?= $row['Status'] ?></td>
+    <td><?= $row['status'] ?></td>
 </tr>
 <?php endwhile; ?>
 

@@ -20,16 +20,12 @@ if ($order_id <= 0 || !in_array($status, $valid_status)) {
     exit();
 }
 
+// Use PostgreSQL prepared statement
+$query = "UPDATE orders SET status=$1 WHERE order_id=$2";
+$result = pg_query_params($conn, $query, array($status, $order_id));
 
-$stmt = $conn->prepare("UPDATE orders SET status=? WHERE order_id=?");
-if (!$stmt) {
-    die("Preparing failed: " . $conn->error);
-}
-
-$stmt->bind_param("si", $status, $order_id);
-
-if ($stmt->execute()) {
+if ($result) {
     echo "Order #$order_id status updated to $status!";
 } else {
-    echo "Failed to update status: " . $stmt->error;
+    echo "Failed to update status: " . pg_last_error($conn);
 }

@@ -49,24 +49,32 @@ if (isset($_POST['pay'])) {
 
     if ($payment_success) {
         
-        $stmt = $conn->prepare("INSERT INTO orders (user_id, order_date, total_amount, Status) VALUES (?, NOW(), ?, 'Paid')");
-        $stmt->bind_param("id", $user_id, $total);
-        $stmt->execute();
-        $order_id = $stmt->insert_id;
-        $stmt->close();
-
+        // Use PostgreSQL prepared statement and RETURNING to get the inserted ID
+        $query = "INSERT INTO orders (user_id, order_date, total_amount, status) 
+                  VALUES ($1, NOW(), $2, 'Paid') RETURNING order_id";
+        $result = pg_query_params($conn, $query, array($user_id, $total));
         
-        $stmt_items = $conn->prepare("INSERT INTO order_items (order_id, item_id, quantity, subtotal) VALUES (?, ?, ?, ?)");
+        if (!$result) {
+            die("Error creating order: " . pg_last_error($conn));
+        }
+        
+        $row = pg_fetch_assoc($result);
+        $order_id = $row['order_id'];
+
+        // Insert order items using PostgreSQL prepared statements
+        $query_items = "INSERT INTO order_items (order_id, item_id, quantity, subtotal) 
+                        VALUES ($1, $2, $3, $4)";
         
         foreach ($_SESSION['cart'] as $item) {
             $item_id = $item['item_id'] ?? 0;
             $qty = $item['quantity'] ?? 1;
             $subtotal = ($item['price'] ?? 0) * $qty;
 
-            $stmt_items->bind_param("iiid", $order_id, $item_id, $qty, $subtotal);
-            $stmt_items->execute();
+            $result_items = pg_query_params($conn, $query_items, array($order_id, $item_id, $qty, $subtotal));
+            if (!$result_items) {
+                die("Error creating order item: " . pg_last_error($conn));
+            }
         }
-        $stmt_items->close();
 
         unset($_SESSION['cart']);
 
