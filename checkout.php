@@ -14,10 +14,10 @@ $user_id = $_SESSION['user_id'];
 
 $total = 0;
 $items_summary = [];
+$cart_items = isset($_SESSION['cart']) && is_array($_SESSION['cart']) ? $_SESSION['cart'] : [];
 
-foreach ($_SESSION['cart'] as $item) {
+foreach ($cart_items as $item) {
     $total += ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
-    
     
     $item_name = $item['name'] ?? $item['item_name'] ?? 'Unknown Item';
     $items_summary[] = $item_name . " (x" . ($item['quantity'] ?? 1) . ")";
