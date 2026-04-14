@@ -3,48 +3,34 @@ session_start();
 include 'includes/db.php';
 
 if(isset($_POST['login'])){
-    $email = trim(getPostData('email'));
-    $password = getPostData('password');
+    $email = pg_escape_string($conn, $_POST['email']);
+    $password = $_POST['password'];
 
-    if(empty($email) || empty($password)){
-        $error = "Please enter both email and password.";
-    } elseif(!validateEmail($email)){
-        $error = "Please enter a valid email address.";
-    } else {
-        // Prepare statement to prevent SQL injection
-        $query = "SELECT user_id, name, email, password_hash, role FROM users WHERE email = $1";
-        $result = pg_query_params($conn, $query, array($email));
+    $query = "SELECT * FROM users WHERE email='$email'";
+    $result = pg_query($conn, $query);
 
-        if(!$result){
-            $error = "Database error. Please try again.";
-            error_log("Login query failed: " . pg_last_error($conn));
-        } elseif(pg_num_rows($result) > 0){
-            $user = pg_fetch_assoc($result);
+    if(pg_num_rows($result) > 0){
+        $user = pg_fetch_assoc($result);
 
-            if(password_verify($password, $user['password_hash'])){
-                // Set session variables
-                $_SESSION['user_id'] = $user['user_id'];
-                $_SESSION['name'] = $user['name'];
-                $_SESSION['email'] = $user['email'];
-                $_SESSION['role'] = $user['role'];
+        if(password_verify($password, $user['password_hash'])){
 
-                // Debug: Log the role
-                error_log("Login successful for user: " . $user['email'] . " with role: " . $user['role']);
+            $_SESSION['user_id'] = $user['user_id'];
+            $_SESSION['name'] = $user['name'];
+            $_SESSION['role'] = $user['role'];
 
-                // Redirect based on role
-                if($user['role'] == "Admin"){
-                    header("Location: admin_dashboard.php");
-                    exit();
-                }else{
-                    header("Location: student_dashboard.php");
-                    exit();
-                }
-            } else {
-                $error = "Incorrect password.";
+            if($user['role'] == "Admin"){
+                header("Location: admin_dashboard.php");
+            }else{
+                header("Location: student_dashboard.php");
             }
+            exit();
+
         } else {
-            $error = "No account found with this email address.";
+            $error = "Incorrect password";
         }
+
+    } else {
+        $error = "User not found";
     }
 }
 ?>

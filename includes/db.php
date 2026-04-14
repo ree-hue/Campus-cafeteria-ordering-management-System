@@ -1,38 +1,21 @@
 <?php
-// PostgreSQL connection for Campus Cafeteria System
-// Supports both local development and cloud deployment (Render, Aiven, etc)
+// PostgreSQL connection
+$host = 'pg-32304d1d-almadonald8-d144.e.aivencloud.com';
+$port = '16350';
+$dbname = 'defaultdb';
+$user = 'avnadmin';
+$pass = 'YOUR_AIVEN_PASSWORD_HERE';  // Put your actual password
 
-// Include error handler
-require_once 'error_handler.php';
-
-$host = getenv('DB_HOST') ?: 'localhost';
-$port = getenv('DB_PORT') ?: '5432';
-$dbname = getenv('DB_NAME') ?: 'campus_cafeteria_ordering_management';
-$user = getenv('DB_USER') ?: 'postgres';
-$pass = getenv('DB_PASSWORD') ?: '';
-
-// Create PostgreSQL connection string with SSL for cloud databases
-$conn_string = "host=$host port=$port dbname=$dbname user=$user password=$pass sslmode=prefer";
+// Create PostgreSQL connection string with SSL
+$conn_string = "host=$host port=$port dbname=$dbname user=$user password=$pass sslmode=require";
 
 // Connect to PostgreSQL
-$conn = @pg_connect($conn_string);
+$conn = pg_connect($conn_string);
 
 // Check connection
 if (!$conn) {
-    $error_msg = "Unable to connect to PostgreSQL database.\n";
-    $error_msg .= "Host: " . safeOutput($host) . "\n";
-    $error_msg .= "Port: " . safeOutput($port) . "\n";
-    $error_msg .= "Database: " . safeOutput($dbname) . "\n";
-    $error_msg .= "User: " . safeOutput($user) . "\n\n";
-    $error_msg .= "Please check your database credentials and firewall settings.\n";
-    $error_msg .= "Ensure this server IP is whitelisted in your database firewall.";
-    
-    error_log("PostgreSQL Connection Failed: " . $error_msg);
-    die("<h2>Database Connection Failed</h2><pre>" . htmlspecialchars($error_msg) . "</pre>");
+    die("Connection failed: " . pg_last_error());
 }
 
-// Set timezone and encoding
-pg_query($conn, "SET TIMEZONE = 'UTC'");
-pg_set_client_encoding($conn, "UTF8");
-
+// echo "Connected successfully to PostgreSQL!";
 ?>

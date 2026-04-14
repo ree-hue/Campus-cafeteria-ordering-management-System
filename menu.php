@@ -7,13 +7,8 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Student'){
 
 include 'includes/db.php';
 
-// PostgreSQL query with error handling
-$result = pg_query($conn, "SELECT * FROM menu_items WHERE availability_status = 1 ORDER BY category");
 
-if(!$result){
-    $error_message = "Unable to load menu items. Please try again later.";
-    error_log("Menu query failed: " . pg_last_error($conn));
-}
+$result = pg_query($conn, "SELECT * FROM menu_items WHERE availability_status = 1 ORDER BY category");
 ?>
 
 <!DOCTYPE html>
@@ -193,29 +188,19 @@ if(!$result){
     <a class="back-btn" href="student_dashboard.php">← Back to Dashboard</a>
 
     <div class="menu-container">
-        <?php if(isset($error_message)): ?>
-            <div style="background: #fee; color: #c33; padding: 20px; border-radius: 8px; text-align: center; margin: 20px auto; max-width: 500px; border-left: 4px solid #c33;">
-                <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
-                <?php echo htmlspecialchars($error_message); ?>
-            </div>
-        <?php elseif($result && pg_num_rows($result) > 0): ?>
+        <?php if($result && pg_num_rows($result) > 0): ?>
             <?php while($item = pg_fetch_assoc($result)): ?>
                 <div class="menu-card">
-                    <img src="image/Cafeteria.jpeg"
-                         alt="<?php echo htmlspecialchars($item['item_name']); ?>"
-                         style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
+                    <img src="image/<?php echo htmlspecialchars($item['image_url']); ?>" alt="<?php echo htmlspecialchars($item['item_name']); ?>">
                     <h3><?php echo htmlspecialchars($item['item_name']); ?></h3>
-                    <p><?php echo htmlspecialchars($item['description'] ?? ''); ?></p>
+                    <p><?php echo htmlspecialchars($item['description']); ?></p>
                     <p class="price">Ksh <?php echo number_format($item['price'],2); ?></p>
                     <input type="number" value="1" min="1" id="qty_<?php echo $item['item_id']; ?>">
                     <button onclick="addToCart(<?php echo $item['item_id']; ?>)">Add to Cart</button>
                 </div>
             <?php endwhile; ?>
         <?php else: ?>
-            <p style="text-align:center; color:#ccc; width:100%; font-size: 18px; margin-top: 50px;">
-                <i class="fas fa-utensils" style="display: block; font-size: 48px; margin-bottom: 10px; opacity: 0.5;"></i>
-                No menu items available at the moment.
-            </p>
+            <p style="text-align:center; color:#555; width:100%;">No menu items available at the moment.</p>
         <?php endif; ?>
     </div>
 

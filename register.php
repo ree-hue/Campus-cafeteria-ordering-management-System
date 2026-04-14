@@ -2,29 +2,23 @@
 include 'includes/db.php';
 
 if(isset($_POST['register'])){
-    $name = trim(getPostData('name'));
-    $email = trim(getPostData('email'));
-    $phone = trim(getPostData('phone'));
-    $password = getPostData('password');
+    $name = pg_escape_string($conn, $_POST['name']);
+    $email = pg_escape_string($conn, $_POST['email']);
+    $phone = pg_escape_string($conn, $_POST['phone']);
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $role = pg_escape_string($conn, $_POST['role']);
 
-    if(empty($name) || empty($email) || empty($password)){
-        $error = "All fields are required.";
-    } elseif(!validateEmail($email)){
-        $error = "Please enter a valid email address.";
-    } elseif(!empty($phone) && !validatePhone($phone)){
-        $error = "Please enter a valid Kenyan phone number starting with 254.";
+    if(!in_array($role, ['Student','Admin'])){
+        $error = "Invalid role selected.";
     } else {
-        $password_hash = password_hash($password, PASSWORD_DEFAULT);
-        $role = 'Student'; // All new registrations are Students, only admins can create admins
 
-        // Use prepared statements to prevent SQL injection
-        $query = "INSERT INTO users (name, email, password_hash, role, phone_number)
-                  VALUES ($1, $2, $3, $4, $5)";
-        $result = pg_query_params($conn, $query, array($name, $email, $password_hash, $role, $phone));
-        if($result){
-            $success = "Registration successful. You are registered as a Student. <a href='login.php'>Login here</a>";
+        $query = "INSERT INTO users (name,email,password_hash,role,phone_number)
+                  VALUES ('$name','$email','$password','$role','$phone')";
+
+        if(pg_query($conn, $query)){
+            $success = "Registration successful. <a href='login.php'>Login here</a>";
         } else {
-            $error = "Error: " . pg_last_error($conn);
+            $error = "Error: ".pg_last_error($conn);
         }
     }
 }
@@ -145,6 +139,12 @@ font-weight:bold;
 <input type="text" name="phone" placeholder="Phone Number">
 
 <input type="password" name="password" placeholder="Password" required>
+
+<select name="role" required>
+<option value="">--Select Role--</option>
+<option value="Student">Student</option>
+<option value="Admin">Admin</option>
+</select>
 
 <button type="submit" name="register" class="btn-register">Register</button>
 
