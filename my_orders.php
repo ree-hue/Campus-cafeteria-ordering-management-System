@@ -1,0 +1,266 @@
+<?php
+session_start();
+include 'includes/db.php';
+
+
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Student') {
+    header("Location: login.php");
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+
+
+$stmt = $conn->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY order_date DESC");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Orders</title>
+    <style>
+        body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 40px auto;
+}
+
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 35px;
+    background: #1e2937;
+    padding: 20px 25px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.back-btn {
+    padding: 12px 24px;
+    background: #334155;
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.back-btn:hover {
+    background: #475569;
+    transform: translateX(-5px);
+}
+
+h2 {
+    color: #f97316;
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+
+.card {
+    background: #1e2937;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    transition: all 0.4s ease;
+    border: 1px solid #334155;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(249, 115, 22, 0.2);
+    border-color: #f97316;
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.order-header h3 {
+    margin: 0;
+    color: #f1f5f9;
+    font-size: 20px;
+}
+
+
+.status {
+    padding: 8px 20px;
+    border-radius: 30px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pending   { background: #f59e0b; }
+.preparing { background: #3b82f6; }
+.ready     { background: #10b981; }
+.completed { background: #64748b; }
+
+
+.item-list {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px dashed #475569;
+}
+
+.item-list p {
+    margin: 8px 0;
+    color: #cbd5e1;
+    font-size: 15.5px;
+}
+
+
+.view-btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 14px 28px;
+    background: linear-gradient(135deg, #f97316, #fb923c);
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
+}
+
+.view-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 25px rgba(249, 115, 22, 0.5);
+}
+
+
+.no-orders {
+    text-align: center;
+    font-size: 22px;
+    color: #94a3b8;
+    margin-top: 100px;
+    font-weight: 500;
+}
+
+.no-orders::before {
+    content: "📭";
+    display: block;
+    font-size: 60px;
+    margin-bottom: 15px;
+    opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    .card {
+        padding: 20px;
+    }
+}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <a href="student_dashboard.php" class="back-btn">← Back to Dashboard</a>
+        <h2>My Orders</h2>
+    </div>
+
+    <?php if ($result->num_rows > 0): ?>
+        <?php while ($row = $result->fetch_assoc()): 
+            $status = strtolower($row['Status']);
+            
+            
+            $stmt_items = $conn->prepare("
+                SELECT oi.quantity, oi.subtotal, m.item_name 
+                FROM order_items oi
+                JOIN menu_items m ON m.item_id = oi.item_id
+                WHERE oi.order_id = ?
+            ");
+            $stmt_items->bind_param("i", $row['order_id']);
+            $stmt_items->execute();
+            $items_result = $stmt_items->get_result();
+        ?>
+            <div class="card">
+                <div class="order-header">
+                    <div>
+                        <strong>Order ID:</strong> #<?= $row['order_id'] ?><br>
+                        <strong>Date:</strong> <?= date('d M Y • h:i A', strtotime($row['order_date'])) ?>
+                    </div>
+                    <div>
+                        <strong>Total:</strong> Ksh <?= number_format($row['total_amount'], 2) ?><br>
+                        <span class="status <?= $status ?>" id="status-<?= $row['order_id'] ?>">
+                            <?= $row['Status'] ?>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="item-list">
+                    <strong>Items Ordered:</strong><br>
+                    <?php while ($item = $items_result->fetch_assoc()): ?>
+                        <p>
+                            <?= htmlspecialchars($item['item_name']) ?> 
+                            × <?= $item['quantity'] ?> 
+                            — Ksh <?= number_format($item['subtotal'], 2) ?>
+                        </p>
+                    <?php endwhile; ?>
+                </div>
+
+                <a href="order_details.php?order_id=<?= $row['order_id'] ?>" class="view-btn">
+                    View Full Details →
+                </a>
+            </div>
+        <?php endwhile; ?>
+    <?php else: ?>
+        <p class="no-orders">You haven't placed any orders yet.</p>
+    <?php endif; ?>
+</div>
+
+
+<script>
+function refreshStatuses() {
+    <?php
+    $stmt2 = $conn->prepare("SELECT order_id FROM orders WHERE user_id = ? ORDER BY order_date DESC");
+    $stmt2->bind_param("i", $user_id);
+    $stmt2->execute();
+    $result2 = $stmt2->get_result();
+    while ($row2 = $result2->fetch_assoc()):
+    ?>
+    fetch('get_order_status.php?order_id=<?= $row2['order_id'] ?>')
+        .then(res => res.json())
+        .then(data => {
+            let statusEl = document.getElementById('status-<?= $row2['order_id'] ?>');
+            if(statusEl){
+                statusEl.textContent = data.order_status;
+                statusEl.className = 'status ' + data.order_status.toLowerCase();
+            }
+        });
+    <?php endwhile; ?>
+}
+
+
+setInterval(refreshStatuses, 5000);
+</script>
+
+</body>
+</html>
