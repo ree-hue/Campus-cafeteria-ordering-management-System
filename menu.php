@@ -7,6 +7,29 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Student'){
 
 include 'includes/db.php';
 
+function getMenuImage(array $item): string {
+    if (!empty($item['image_url'])) {
+        return 'image/' . rawurlencode($item['image_url']);
+    }
+
+    $possibleFiles = [
+        $item['item_name'] . '.jpeg',
+        $item['item_name'] . '.jpg',
+        $item['item_name'] . '.png',
+        strtolower($item['item_name']) . '.jpeg',
+        strtolower($item['item_name']) . '.jpg',
+        strtolower($item['item_name']) . '.png',
+    ];
+
+    foreach ($possibleFiles as $filename) {
+        $localPath = __DIR__ . '/image/' . $filename;
+        if (file_exists($localPath)) {
+            return 'image/' . rawurlencode($filename);
+        }
+    }
+
+    return 'image/Cover.jpeg';
+}
 
 $result = pg_query($conn, "SELECT * FROM menu_items WHERE availability_status = 1 ORDER BY category");
 ?>
@@ -191,7 +214,7 @@ $result = pg_query($conn, "SELECT * FROM menu_items WHERE availability_status = 
         <?php if($result && pg_num_rows($result) > 0): ?>
             <?php while($item = pg_fetch_assoc($result)): ?>
                 <div class="menu-card">
-                    <img src="image/<?php echo htmlspecialchars($item['image_url']); ?>" alt="<?php echo htmlspecialchars($item['item_name']); ?>">
+                    <img src="<?php echo getMenuImage($item); ?>" alt="<?php echo htmlspecialchars($item['item_name']); ?>">
                     <h3><?php echo htmlspecialchars($item['item_name']); ?></h3>
                     <p><?php echo htmlspecialchars($item['description']); ?></p>
                     <p class="price">Ksh <?php echo number_format($item['price'],2); ?></p>
