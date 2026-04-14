@@ -291,7 +291,8 @@ input:focus, select:focus {
             <label for="payment_method">Payment Method:</label>
             <select name="payment_method" id="payment_method" required onchange="togglePaymentFields()">
                 <option value="M-Pesa">M-Pesa</option>
-        
+                <option value="Cash">Cash</option>
+                <option value="Card">Card</option>
             </select>
 
             <div id="mpesa-fields">

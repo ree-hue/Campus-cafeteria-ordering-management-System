@@ -1,21 +1,27 @@
 <?php
 session_start();
+header('Content-Type: application/json');
 include 'includes/db.php';
 
-if(!isset($_GET['order_id']) || !isset($_SESSION['user_id'])) {
-    echo json_encode(['order_status' => 'unknown']);
+if (!isset($_SESSION['user_id'])) {
+    echo json_encode([]);
     exit();
 }
 
-$order_id = intval($_GET['order_id']);
+$user_id = $_SESSION['user_id'];
 
-// Use PostgreSQL prepared statement
-$query = "SELECT order_status FROM orders WHERE order_id = $1 AND user_id = $2";
-$result = pg_query_params($conn, $query, array($order_id, $_SESSION['user_id']));
+$query = "SELECT order_id, order_status FROM orders WHERE user_id = $1 ORDER BY order_date DESC";
+$result = pg_query_params($conn, $query, array($user_id));
 
-if($row = pg_fetch_assoc($result)) {
-    echo json_encode(['order_status' => $row['order_status']]);
-} else {
-    echo json_encode(['order_status' => 'unknown']);
+$orders = [];
+if ($result) {
+    while ($row = pg_fetch_assoc($result)) {
+        $orders[] = [
+            'order_id' => $row['order_id'],
+            'order_status' => $row['order_status']
+        ];
+    }
 }
+
+echo json_encode($orders);
 ?>

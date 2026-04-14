@@ -365,12 +365,12 @@ if($pending > 0){
 <div id="orders" class="section"> 
     <h2>Orders</h2>
     <?php if($orders && pg_num_rows($orders) > 0): ?>
-        <?php while($row = $orders->fetch_assoc()): ?>
+        <?php while($row = pg_fetch_assoc($orders)): ?>
             <div class="card">
                 <p><strong>Order ID:</strong> <?= $row['order_id']; ?></p>
                 <p><strong>User ID:</strong> <?= $row['user_id']; ?></p>
                 <p><strong>Total:</strong> Ksh <?= number_format($row['total_amount'],2); ?></p>
-                <p><strong>Status:</strong> <?= $row['Status']; ?></p>
+                <p><strong>Status:</strong> <?= htmlspecialchars($row['order_status'] ?? $row['status']); ?></p>
                 <form method="POST" action="update_order_status.php">
                     <input type="hidden" name="order_id" value="<?= $row['order_id']; ?>">
                     <select name="status">
@@ -433,126 +433,6 @@ if($pending > 0){
         </table>
     </div>
 </div>
-
-
-<div id="reports" class="section">
-    <h2>Reports</h2>
-
-   <?php
-
-include 'includes/db.php'; 
-
-
-if(session_status() === PHP_SESSION_NONE){
-    session_start();
-}
-
-
-if(!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin'){
-    echo "Access denied!";
-    exit();
-}
-
-
-
-$totalOrders = 0;
-$totalSales = 0;
-$completedOrders = 0;
-$ordersList = [];
-
-
-if(isset($_GET['generate_report'])){
-    $from = $_GET['from_date'];
-    $to   = $_GET['to_date'];
-
-    // Use PostgreSQL prepared statement to prevent SQL injection
-    $query = "SELECT * FROM orders WHERE DATE(order_date) BETWEEN $1 AND $2";
-    $reportResult = pg_query_params($conn, $query, array($from, $to));
-
-    if($reportResult){
-        $totalOrders = pg_num_rows($reportResult);
-        while($row = pg_fetch_assoc($reportResult)){
-            $totalSales += $row['total_amount'];
-            if($row['order_status'] === 'Completed'){
-                $completedOrders++;
-            }
-            $ordersList[] = $row;
-        }
-    }
-}
-?>
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Admin Reports</title>
-    <style>
-        body { font-family: Arial, sans-serif; background:#f4f6f9; margin:0; padding:0; }
-        .header { background:#2c3e50; color:white; padding:20px; text-align:center; font-size:24px; }
-        .container { width:90%; margin:30px auto; }
-        .form-container { background:white; padding:20px; border-radius:10px; margin-bottom:20px; }
-        .form-container h3 { margin-top:0; }
-        .form-container input { padding:8px; margin-right:10px; border-radius:5px; border:1px solid #ccc; }
-        .form-container button { padding:8px 15px; background:#3498db; color:white; border:none; border-radius:5px; cursor:pointer; }
-        .form-container button:hover { background:#2980b9; }
-        .cards { display:flex; gap:15px; margin-bottom:20px; flex-wrap:wrap; }
-        .card { flex:1; min-width:150px; padding:20px; border-radius:10px; color:white; text-align:center; font-weight:bold; }
-        .total { background:#8e44ad; }
-        .revenue { background:#27ae60; }
-        .completed { background:#2c3e50; }
-        .table-container { background:white; padding:20px; border-radius:10px; }
-        table { width:100%; border-collapse:collapse; margin-top:10px; }
-        th, td { padding:10px; border:1px solid #ddd; text-align:center; }
-        th { background:#ecf0f1; }
-        .download-btn { margin-top:10px; padding:10px 20px; background:#e67e22; color:white; border:none; border-radius:6px; cursor:pointer; }
-        .download-btn:hover { background:#d35400; }
-    </style>
-</head>
-<body>
-
-<div class="header">📊 Admin Reports Dashboard</div>
-
-<div class="container">
-
-    
-
-    
-    <div class="cards">
-        <div class="card total">Total Orders<br><?= $totalOrders ?></div>
-        <div class="card revenue">Revenue<br>Ksh <?= number_format($totalSales,2) ?></div>
-        <div class="card completed">Completed Orders<br><?= $completedOrders ?></div>
-    </div>
-
-    
-
-    
-    <?php if($totalOrders > 0): ?>
-    <div class="table-container">
-        <h3>Report Results</h3>
-        <table>
-            <tr>
-                <th>Order ID</th>
-                <th>User ID</th>
-                <th>Total (Ksh)</th>
-                <th>Status</th>
-                <th>Date</th>
-            </tr>
-            <?php foreach($ordersList as $order): ?>
-            <tr>
-                <td><?= $order['order_id'] ?></td>
-                <td><?= $order['user_id'] ?></td>
-                <td><?= number_format($order['total_amount'],2) ?></td>
-                <td><?= $order['order_status'] ?></td>
-                <td><?= $order['order_date'] ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </table>
-    </div>
-    <?php endif; ?>
-
-</div>
-
-</body>
-</html>
 </div>
 </body>
 </html>

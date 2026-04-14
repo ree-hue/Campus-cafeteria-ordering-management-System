@@ -21,10 +21,11 @@ if(isset($_POST['register'])){
         $query = "INSERT INTO users (name, email, password_hash, role, phone_number)
                   VALUES ($1, $2, $3, $4, $5)";
         $result = pg_query_params($conn, $query, array($name, $email, $password_hash, $role, $phone));
-    if($result){
-        $success = "Registration successful. You are registered as a Student. <a href='login.php'>Login here</a>";
-    } else {
-        $error = "Error: " . pg_last_error($conn);
+        if($result){
+            $success = "Registration successful. You are registered as a Student. <a href='login.php'>Login here</a>";
+        } else {
+            $error = "Error: " . pg_last_error($conn);
+        }
     }
 }
 ?>
