@@ -1,6 +1,6 @@
 <?php
 // PostgreSQL connection for Campus Cafeteria System
-// Supports both local development and Render deployment
+// Supports both local development and cloud deployment (Render, Aiven, etc)
 
 $host = getenv('DB_HOST') ?: 'localhost';
 $port = getenv('DB_PORT') ?: '5432';
@@ -8,18 +8,24 @@ $dbname = getenv('DB_NAME') ?: 'campus_cafeteria_ordering_management';
 $user = getenv('DB_USER') ?: 'postgres';
 $pass = getenv('DB_PASSWORD') ?: '';
 
-// Create PostgreSQL connection string with SSL for Render
+// Create PostgreSQL connection string with SSL for cloud databases
 $conn_string = "host=$host port=$port dbname=$dbname user=$user password=$pass sslmode=prefer";
 
 // Connect to PostgreSQL
-$conn = pg_connect($conn_string);
+$conn = @pg_connect($conn_string);
 
 // Check connection
 if (!$conn) {
-    error_log("PostgreSQL Connection Error: " . pg_last_error());
-    die("<h2>Database Connection Failed</h2>" . 
-        "<p>Error: " . htmlspecialchars(pg_last_error()) . "</p>" .
-        "<p>Please check database credentials and ensure PostgreSQL is running.</p>");
+    $error_msg = "Unable to connect to PostgreSQL database.\n";
+    $error_msg .= "Host: " . htmlspecialchars($host) . "\n";
+    $error_msg .= "Port: " . htmlspecialchars($port) . "\n";
+    $error_msg .= "Database: " . htmlspecialchars($dbname) . "\n";
+    $error_msg .= "User: " . htmlspecialchars($user) . "\n\n";
+    $error_msg .= "Please check your database credentials and firewall settings.\n";
+    $error_msg .= "Ensure this server IP is whitelisted in your database firewall.";
+    
+    error_log("PostgreSQL Connection Failed: " . $error_msg);
+    die("<h2>Database Connection Failed</h2><pre>" . htmlspecialchars($error_msg) . "</pre>");
 }
 
 // Set timezone and encoding

@@ -6,21 +6,17 @@ if(isset($_POST['register'])){
     $email = $_POST['email'];
     $phone = $_POST['phone'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    $role = $_POST['role'];
+    $role = 'Student'; // All new registrations are Students, only admins can create admins
 
-    if(!in_array($role, ['Student','Admin'])){
-        $error = "Invalid role selected.";
+    // Use prepared statements to prevent SQL injection
+    $query = "INSERT INTO users (name, email, password_hash, role, phone_number)
+              VALUES ($1, $2, $3, $4, $5)";
+$result = pg_query_params($conn, $query, array($name, $email, $password, $role, $phone));
+
+    if($result){
+        $success = "Registration successful. You are registered as a Student. <a href='login.php'>Login here</a>";
     } else {
-        // Use prepared statements to prevent SQL injection
-        $query = "INSERT INTO users (name, email, password_hash, role, phone_number)
-                  VALUES ($1, $2, $3, $4, $5)";
-        $result = pg_query_params($conn, $query, array($name, $email, $password, $role, $phone));
-
-        if($result){
-            $success = "Registration successful. <a href='login.php'>Login here</a>";
-        } else {
-            $error = "Error: " . pg_last_error($conn);
-        }
+        $error = "Error: " . pg_last_error($conn);
     }
 }
 ?>
@@ -140,12 +136,6 @@ font-weight:bold;
 <input type="text" name="phone" placeholder="Phone Number">
 
 <input type="password" name="password" placeholder="Password" required>
-
-<select name="role" required>
-<option value="">--Select Role--</option>
-<option value="Student">Student</option>
-<option value="Admin">Admin</option>
-</select>
 
 <button type="submit" name="register" class="btn-register">Register</button>
 

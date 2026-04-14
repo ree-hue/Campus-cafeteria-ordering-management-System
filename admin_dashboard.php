@@ -210,7 +210,8 @@ function showSection(sectionId){
     <a onclick="showSection('dashboard')">🏠 Dashboard</a>
     <a onclick="showSection('orders')">📦 Orders</a>
     <a onclick="showSection('menu-management')">🍔 Menu Management</a>
-    <a href="reports.php">� Reports</a>
+    <a href="manage_admins.php">👥 Manage Admins</a>
+    <a href="reports.php">📊 Reports</a>
     <a href="logout.php">🚪 Logout</a>
 </div>
 

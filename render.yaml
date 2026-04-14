@@ -12,27 +12,27 @@ services:
         value: "10000"
       - key: DB_HOST
         fromDatabase:
-          name: campus-cafeteria-db
+          name: campus-cafeteria-postgres
           property: host
       - key: DB_PORT
         value: "5432"
       - key: DB_NAME
         fromDatabase:
-          name: campus-cafeteria-db
+          name: campus-cafeteria-postgres
           property: database
       - key: DB_USER
         fromDatabase:
-          name: campus-cafeteria-db
+          name: campus-cafeteria-postgres
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: campus-cafeteria-db
+          name: campus-cafeteria-postgres
           property: password
 
   - type: pgsql
-    name: campus-cafeteria-db
+    name: campus-cafeteria-postgres
     plan: free
     region: oregon
     databaseName: campus_cafeteria_ordering_management
-    user: campus_cafeteria_user
-    preDeployCommand: "psql -d $DATABASE_URL -f database.sql"
+    user: campus_cafeteria_ordering_management_user
+    preDeployCommand: "psql $DATABASE_URL < database.sql"
