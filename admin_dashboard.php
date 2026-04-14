@@ -3,7 +3,7 @@ session_start();
 include 'includes/db.php';
 
 // Check if user is logged in and is admin
-if(!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin'){
+if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Admin'){
     header("Location: login.php");
     exit();
 }
