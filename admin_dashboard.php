@@ -9,10 +9,10 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Admin'){
 }
 
 
-$orders = pg_query($conn, "SELECT * FROM orders ORDER BY order_date DESC");
+$orders = pg_query($conn, "SELECT * FROM orders ORDER BY order_date DESC LIMIT 10");
 
 // Fetch aggregates - PostgreSQL style
-$totalResult = pg_query($conn, "SELECT SUM(total_amount) AS total FROM orders");
+$totalResult = pg_query($conn, "SELECT COALESCE(SUM(total_amount), 0) AS total FROM orders");
 $totalRow = pg_fetch_assoc($totalResult);
 $totalSales = $totalRow['total'] ?? 0;
 

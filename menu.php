@@ -201,10 +201,11 @@ if(!$result){
         <?php elseif($result && pg_num_rows($result) > 0): ?>
             <?php while($item = pg_fetch_assoc($result)): ?>
                 <div class="menu-card">
-                    <img src="image/menu_<?php echo htmlspecialchars($item['item_id']); ?>.jpg"
-                         alt="<?php echo htmlspecialchars($item['item_name'] ?? 'Menu Item'); ?>"
-                         onerror="this.src='image/Cafeteria.jpeg'">
-                    <h3><?php echo htmlspecialchars($item['item_name'] ?? 'Menu Item'); ?></h3>
+                    <img src="image/<?php echo htmlspecialchars(strtolower(str_replace(' ', '_', $item['item_name']))); ?>.jpeg"
+                         alt="<?php echo htmlspecialchars($item['item_name']); ?>"
+                         onerror="this.src='image/Cafeteria.jpeg'"
+                         style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
+                    <h3><?php echo htmlspecialchars($item['item_name']); ?></h3>
                     <p><?php echo htmlspecialchars($item['description'] ?? ''); ?></p>
                     <p class="price">Ksh <?php echo number_format($item['price'],2); ?></p>
                     <input type="number" value="1" min="1" id="qty_<?php echo $item['item_id']; ?>">

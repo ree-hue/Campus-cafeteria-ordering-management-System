@@ -28,13 +28,17 @@ if(isset($_POST['login'])){
                 $_SESSION['email'] = $user['email'];
                 $_SESSION['role'] = $user['role'];
 
+                // Debug: Log the role
+                error_log("Login successful for user: " . $user['email'] . " with role: " . $user['role']);
+
                 // Redirect based on role
                 if($user['role'] == "Admin"){
                     header("Location: admin_dashboard.php");
+                    exit();
                 }else{
                     header("Location: student_dashboard.php");
+                    exit();
                 }
-                exit();
             } else {
                 $error = "Incorrect password.";
             }
