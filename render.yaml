@@ -1,0 +1,19 @@
+services:
+  - type: web_service
+    name: campus-cafeteria-order-management
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: DB_HOST
+        value: ""
+      - key: DB_NAME
+        value: ""
+      - key: DB_USER
+        value: ""
+      - key: DB_PASSWORD
+        value: ""
