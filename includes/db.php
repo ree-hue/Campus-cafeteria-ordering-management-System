@@ -1,12 +1,15 @@
 <?php
-$host = "localhost";  // usually localhost
-$user = "root";       // your MySQL username
-$pass = "";           // your MySQL password
-$db   = "smartmealdb";
+// Get database info from environment variables (set in Render)
+$host = getenv('DB_HOST') ?: 'localhost';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASSWORD') ?: '';
+$dbname = getenv('DB_NAME') ?: 'smartmaildb';
 
-$conn = new mysqli($host, $user, $pass, $db);
+// Create connection
+$conn = new mysqli($host, $user, $pass, $dbname);
 
+// Check connection
 if ($conn->connect_error) {
-    die("Database Connection Failed: " . $conn->connect_error);
+    die("Connection failed: " . $conn->connect_error);
 }
 ?>
