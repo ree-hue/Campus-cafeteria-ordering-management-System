@@ -1,21 +1,43 @@
 <?php
-// PostgreSQL connection
-$host = 'pg-32304d1d-almadonald8-d144.e.aivencloud.com';
-$port = '16350';
-$dbname = 'defaultdb';
-$user = 'avnadmin';
-$pass = 'YOUR_AIVEN_PASSWORD_HERE';  // Put your actual password
+/**
+ * PostgreSQL Database Connection
+ * For Render.com Deployment
+ */
 
-// Create PostgreSQL connection string with SSL
-$conn_string = "host=$host port=$port dbname=$dbname user=$user password=$pass sslmode=require";
+// Database configuration
+$config = [
+    'host' => getenv('DB_HOST') ?: 'dpg-d7f8shi8qa3s73d52hng-a.oregon-postgres.render.com',
+    'port' => getenv('DB_PORT') ?: '5432',
+    'dbname' => getenv('DB_NAME') ?: 'campus_cafeteria_ordering_management',
+    'user' => getenv('DB_USER') ?: 'campus_cafeteria_ordering_management_user',
+    'password' => getenv('DB_PASSWORD') ?: 'ZlkQbgwJCW0FJUA9nXYglDm0VGnGPhLj'
+];
+
+// Build connection string
+$conn_string = sprintf(
+    "host=%s port=%s dbname=%s user=%s password=%s",
+    $config['host'],
+    $config['port'],
+    $config['dbname'],
+    $config['user'],
+    $config['password']
+);
 
 // Connect to PostgreSQL
 $conn = pg_connect($conn_string);
 
 // Check connection
 if (!$conn) {
-    die("Connection failed: " . pg_last_error());
+    // Log error for debugging
+    error_log("PostgreSQL connection failed: " . pg_last_error());
+    
+    // Show user-friendly message
+    die("Unable to connect to database. Please try again later.");
 }
 
-// echo "Connected successfully to PostgreSQL!";
+// Set UTF-8 encoding
+pg_set_client_encoding($conn, "UTF8");
+
+// Uncomment for debugging only
+// echo "✅ Connected to: " . $config['dbname'];
 ?>
