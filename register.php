@@ -2,17 +2,25 @@
 include 'includes/db.php';
 
 if(isset($_POST['register'])){
-    $name = $_POST['name'];
-    $email = $_POST['email'];
-    $phone = $_POST['phone'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    $role = 'Student'; // All new registrations are Students, only admins can create admins
+    $name = trim(getPostData('name'));
+    $email = trim(getPostData('email'));
+    $phone = trim(getPostData('phone'));
+    $password = getPostData('password');
 
-    // Use prepared statements to prevent SQL injection
-    $query = "INSERT INTO users (name, email, password_hash, role, phone_number)
-              VALUES ($1, $2, $3, $4, $5)";
-$result = pg_query_params($conn, $query, array($name, $email, $password, $role, $phone));
+    if(empty($name) || empty($email) || empty($password)){
+        $error = "All fields are required.";
+    } elseif(!validateEmail($email)){
+        $error = "Please enter a valid email address.";
+    } elseif(!empty($phone) && !validatePhone($phone)){
+        $error = "Please enter a valid Kenyan phone number starting with 254.";
+    } else {
+        $password_hash = password_hash($password, PASSWORD_DEFAULT);
+        $role = 'Student'; // All new registrations are Students, only admins can create admins
 
+        // Use prepared statements to prevent SQL injection
+        $query = "INSERT INTO users (name, email, password_hash, role, phone_number)
+                  VALUES ($1, $2, $3, $4, $5)";
+        $result = pg_query_params($conn, $query, array($name, $email, $password_hash, $role, $phone));
     if($result){
         $success = "Registration successful. You are registered as a Student. <a href='login.php'>Login here</a>";
     } else {

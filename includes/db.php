@@ -2,6 +2,9 @@
 // PostgreSQL connection for Campus Cafeteria System
 // Supports both local development and cloud deployment (Render, Aiven, etc)
 
+// Include error handler
+require_once 'error_handler.php';
+
 $host = getenv('DB_HOST') ?: 'localhost';
 $port = getenv('DB_PORT') ?: '5432';
 $dbname = getenv('DB_NAME') ?: 'campus_cafeteria_ordering_management';
@@ -17,10 +20,10 @@ $conn = @pg_connect($conn_string);
 // Check connection
 if (!$conn) {
     $error_msg = "Unable to connect to PostgreSQL database.\n";
-    $error_msg .= "Host: " . htmlspecialchars($host) . "\n";
-    $error_msg .= "Port: " . htmlspecialchars($port) . "\n";
-    $error_msg .= "Database: " . htmlspecialchars($dbname) . "\n";
-    $error_msg .= "User: " . htmlspecialchars($user) . "\n\n";
+    $error_msg .= "Host: " . safeOutput($host) . "\n";
+    $error_msg .= "Port: " . safeOutput($port) . "\n";
+    $error_msg .= "Database: " . safeOutput($dbname) . "\n";
+    $error_msg .= "User: " . safeOutput($user) . "\n\n";
     $error_msg .= "Please check your database credentials and firewall settings.\n";
     $error_msg .= "Ensure this server IP is whitelisted in your database firewall.";
     

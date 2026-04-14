@@ -1,16 +1,10 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 session_start();
 include 'includes/db.php';
 
-
-$_SESSION['role'] = 'Admin';
-
-
-if(!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin'){
-    echo "Access denied!";
+// Check if user is logged in and is admin
+if(!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin'){
+    header("Location: login.php");
     exit();
 }
 
